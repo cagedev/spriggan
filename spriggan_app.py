@@ -7,8 +7,16 @@ class SprigganApp:
 
     window_surface = None
 
+    # TODO: load from config file
+    # file_buttons
+    file_container_margin_left = 50
+    file_container_margin_top = 50
+    file_button_width = 50
+    file_button_height = 50
+    # TODO: file_button_sprites = {save, load, etc}...
     background_color = (0, 0, 0)
-    # load from config file
+
+    # palette
     palette_colors = [
         (255, 255, 255),
         (153,   0, 255),  # purple
@@ -25,6 +33,7 @@ class SprigganApp:
     palette_button_margin = 5
     selected_color = 0
 
+    # image_grid
     image_grid_margin_top = 80
     image_grid_margin_left = 120
     image_grid_size_x = 14
@@ -38,6 +47,7 @@ class SprigganApp:
     grid_y_min = image_grid_margin_top
     grid_y_max = grid_y_min + image_grid_size_y * \
         (image_pixel_size + image_pixel_margin)
+
 
     def __init__(self):
 
@@ -70,8 +80,16 @@ class SprigganApp:
             self.palette_buttons.append(b)
         self.palette_group = pygame.sprite.LayeredDirty(self.palette_buttons)
 
+        # setup other buttons
+        self.file_buttons = []
+        x = self.file_container_margin_left
+        y = self.file_container_margin_top
+        file_save = gui.Button()
+
+        # setup image_grid
         self.image_grid = [[0 for x in range(self.image_grid_size_x)]
-                           for y in range(self.image_grid_size_y)]
+        for y in range(self.image_grid_size_y)]
+
 
         self.clock = pygame.time.Clock()
         self.is_running = True
