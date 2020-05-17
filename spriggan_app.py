@@ -2,6 +2,8 @@ import pygame
 import pygvisuals.widgets as gui
 import math
 
+import glob  # or pathlib?
+
 
 class SprigganApp:
 
@@ -9,11 +11,20 @@ class SprigganApp:
 
     # TODO: load from config file
     # file_buttons
-    file_container_margin_left = 50
-    file_container_margin_top = 50
-    file_button_width = 50
-    file_button_height = 50
+    file_container_margin_left = 30
+    file_container_margin_top = 30
+    file_button_width = 80
+    file_button_height = 30
     # TODO: file_button_sprites = {save, load, etc}...
+    # do it with text until then
+
+    media_dir = './media'
+    base_save_filename = 'spriggan_save'
+    base_export_filename = 'spriggan_export'
+    base_save_ext = 'json'
+    base_export_ext = 'png'
+    load_files_filter = 'spriggan*.json'
+
     background_color = (0, 0, 0)
 
     # palette
@@ -48,7 +59,6 @@ class SprigganApp:
     grid_y_max = grid_y_min + image_grid_size_y * \
         (image_pixel_size + image_pixel_margin)
 
-
     def __init__(self):
 
         pygame.init()
@@ -75,7 +85,7 @@ class SprigganApp:
             dy = self.palette_button_height
 
             b = gui.Button(x, y, dx, dy,
-                           '',
+                           'a',
                            callback=lambda x=i: self.setcolor(x)).setBackground(c).setForeground((0, 0, 0))
             self.palette_buttons.append(b)
         self.palette_group = pygame.sprite.LayeredDirty(self.palette_buttons)
@@ -84,12 +94,31 @@ class SprigganApp:
         self.file_buttons = []
         x = self.file_container_margin_left
         y = self.file_container_margin_top
-        file_save = gui.Button()
+        dx = self.file_button_width
+        dy = self.file_button_height
+        file_save = gui.Button(x, y, dx, dy, 'SAVE', callback=lambda: file_save(
+        )).setBackground((0, 196, 0)).setForeground((0, 0, 0))
+        self.file_buttons.append(file_save)
+        x += dx
+        # y += dy
+        button_file_load = gui.Button(x, y, dx, dy, 'LOAD', callback=self.file_load).setBackground(
+            (0, 0, 196)).setForeground((0, 0, 0))
+        self.file_buttons.append(button_file_load)
+        x += dx
+        # y += dy
+        button_file_export = gui.Button(x, y, dx, dy, 'EXPORT', callback=self.file_export).setBackground(
+            (196, 0, 0)).setForeground((0, 0, 0))
+        self.file_buttons.append(button_file_export)
+        x += dx
+        button_file_list = gui.Button(x, y, dx, dy, 'LIST', callback=self.file_list).setBackground(
+            (255, 0, 0)).setForeground((0, 0, 0))
+        self.file_buttons.append(button_file_list)
+        self.file_group = pygame.sprite.LayeredDirty(self.file_buttons)
+        print(self.file_buttons)
 
         # setup image_grid
         self.image_grid = [[0 for x in range(self.image_grid_size_x)]
-        for y in range(self.image_grid_size_y)]
-
+                           for y in range(self.image_grid_size_y)]
 
         self.clock = pygame.time.Clock()
         self.is_running = True
@@ -122,6 +151,22 @@ class SprigganApp:
                 #     self.window_surface, self.palette_colors[self.image_grid[j][i]],
                 #     [x, y, self.image_pixel_size, self.image_pixel_size])
 
+    def file_list(self):
+        # TODO: probably should use pathdir or something...
+        print('saves:', glob.glob(self.media_dir + '/*.' +
+                        self.base_save_ext, recursive=True))
+        print('exports:', glob.glob(self.media_dir + '/*.' +
+                        self.base_export_ext, recursive=True))
+
+    def file_save(self):
+        print('file_save')
+
+    def file_load(self):
+        print('file_load')
+
+    def file_export(self):
+        print('file_export')
+
     def run(self):
         while self.is_running:
             time_delta = self.clock.tick(60) / 1000.0
@@ -152,8 +197,10 @@ class SprigganApp:
                             print("mouseclick(", pos, ") -> (", row, ",", col, ")")
 
                 self.palette_group.update(event)
+                self.file_group.update(event)
 
             self.palette_group.draw(self.window_surface, self.background)
+            self.file_group.draw(self.window_surface, self.background)
             self.draw_grid()
             pygame.display.update()
             # pygame.time.wait(100)
