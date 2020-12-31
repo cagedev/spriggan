@@ -1,6 +1,8 @@
 import pygame
 import pygvisuals.widgets as gui
 import math
+import json
+from datetime import datetime
 
 import glob  # or pathlib?
 
@@ -24,40 +26,73 @@ class SprigganApp:
     filelist_widget_height = 480
 
     media_dir = './media'
-    base_save_filename = 'spriggan_save'
-    base_export_filename = 'spriggan_export'
-    base_save_ext = 'json'
-    base_export_ext = 'png'
+    base_save_filename = 'spriggan_save_'
+    base_export_filename = 'spriggan_export_'
+    base_save_ext = '.json'
+    base_export_ext = '.png'
     load_files_filter = 'spriggan*.json'
 
-    background_color = (0, 0, 0)
-    saved_color = (0,255,0)
+    background_color = (34, 0, 102)
+    saved_color = (0, 255, 0)
     unsaved_color = (255, 0, 0)
 
     # palette
-    palette_colors = [
-        (255, 255, 255),
-        (153,   0, 255),  # purple
-        (204,   0,   0),  # red
-        (0, 153,   0),  # green
-        (255, 204,   0),  # yellow
-        (0,  51, 204),  # blue
-        (255, 102, 255),  # pink
-    ]
-    palette_container_margin_left = 480
+    palette_container_margin_left = 424
     palette_container_margin_top = 100
-    palette_button_width = 50
-    palette_button_height = 50
-    palette_button_margin = 5
     selected_color = 0
+
+    # 7-color palette
+    # palette_colors = [
+    #     (255, 255, 255),
+    #     (153,   0, 255),  # purple
+    #     (204,   0,   0),  # red
+    #     (0, 153,   0),  # green
+    #     (255, 204,   0),  # yellow
+    #     (0,  51, 204),  # blue
+    #     (255, 102, 255),  # pink
+    # ]
+    # palette_button_width = 50
+    # palette_button_height = 50
+    # palette_button_margin = 5
+
+    # 16-color palette
+    palette_colors = [
+        (255, 255, 255),  # white / background
+        (255,  20, 147),  # fluorescent pink
+        (124, 185, 232),  # light blue
+        (255, 191,   0),  # yellow
+        (51,   0, 102),  # dark purple
+        (255, 128,   0),  # orange
+        (179, 102, 255),  # light purple
+        (255, 179, 255),  # light pink
+        (204,   0,  34),  # red
+        (75,  54,  33),  # dark brown
+        (0,  72, 186),  # blue
+        (178, 190, 181),  # grey
+        (123,  63,   0),  # brown
+        (0,   0,   0),  # black
+        (34, 204,   0),  # green
+    ]
+    palette_button_width = 28
+    palette_button_height = 28
+    palette_button_margin = 4
 
     # image_grid
     image_grid_margin_top = 96
     image_grid_margin_left = 28
-    image_grid_size_x = 14
-    image_grid_size_y = 14
-    image_pixel_size = 20
-    image_pixel_margin = 5
+
+    # 14x14-setup
+    # image_grid_size_x = 14
+    # image_grid_size_y = 14
+    # image_pixel_size = 20
+    # image_pixel_margin = 5
+
+    # 30x30-setup
+    image_grid_size_x = 30
+    image_grid_size_y = 30
+    image_pixel_size = 10
+    image_pixel_margin = 2
+
     image_grid = []
     grid_x_min = image_grid_margin_left
     grid_x_max = grid_x_min + image_grid_size_x * \
@@ -85,8 +120,9 @@ class SprigganApp:
         self.palette_buttons = []
         for c, i in zip(self.palette_colors, range(len(self.palette_colors))):
 
-            x = self.palette_container_margin_left
-            y = self.palette_container_margin_top + i * \
+            x = self.palette_container_margin_left + (i // 8) * \
+                (self.palette_button_width + self.palette_button_margin)
+            y = self.palette_container_margin_top + (i % 8) * \
                 (self.palette_button_height + self.palette_button_margin)
             dx = self.palette_button_width
             dy = self.palette_button_height
@@ -135,7 +171,6 @@ class SprigganApp:
         self.filelist_widgets.append(listbox_file_load)
         self.filelist_group = pygame.sprite.LayeredDirty(self.filelist_widgets)
 
-
         # setup image_grid
         self.image_grid = [[0 for x in range(self.image_grid_size_x)]
                            for y in range(self.image_grid_size_y)]
@@ -143,18 +178,15 @@ class SprigganApp:
         self.clock = pygame.time.Clock()
         self.is_running = True
 
-
     def setcolor(self, c):
         self.selected_color = c
         # print(self.selected_color)
-
 
     def draw_bead(self, s, x, y, dx, dy, c, f=pygame.draw.rect):
         # pygame.draw.rect(
         #     self.window_surface, self.palette_colors[self.image_grid[j][i]],
         #     [x, y, self.image_pixel_size, self.image_pixel_size])
         f(s, c, [x, y, dx, dy])
-
 
     def draw_grid(self):
         for j in range(self.image_grid_size_y):
@@ -174,39 +206,41 @@ class SprigganApp:
                 #     self.window_surface, self.palette_colors[self.image_grid[j][i]],
                 #     [x, y, self.image_pixel_size, self.image_pixel_size])
 
-
     def file_list(self):
         # TODO: probably should use pathdir or something...
         data_files = glob.glob(self.media_dir + '/*.' +
-                                  self.base_save_ext, recursive=True)
+                               self.base_save_ext, recursive=True)
         print('saves:', data_files)
         print('exports:', glob.glob(self.media_dir + '/*.' +
                                     self.base_export_ext, recursive=True))
         print(self.filelist_widgets[0].setList(data_files))
 
-
     def set_unsaved(self):
         self.file_buttons[0].setBackground(self.unsaved_color)
         self.saved = False
-
 
     def set_saved(self):
         self.file_buttons[0].setBackground(self.saved_color)
         self.saved = True
 
-
     def file_save(self):
-        print('file_save')
+        export_file = SprigganFile()
+        export_file.create(self.image_grid_size_x,
+                           self.image_grid_size_y,
+                           self.image_grid,
+                           self.palette_colors)
+        t = int(datetime.utcnow().timestamp())
+        print(t)
+        export_file.save_to_file(
+            self.media_dir + '/' + self.base_save_filename + str(t) + self.base_save_ext)
+        # print('file_save')
         self.set_saved()
-
 
     def file_load(self):
         print('file_load')
 
-
     def file_export(self):
         print('file_export')
-
 
     def run(self):
         self.saved = False
@@ -251,6 +285,30 @@ class SprigganApp:
             pygame.display.update()
             # pygame.time.wait(100)
             # pygame.display.update()
+
+
+class SprigganFile():
+    def create(self, x, y, grid, palette):
+        self.image_grid_size_x = x
+        self.image_grid_size_y = y
+        self.image_grid = grid
+        self.palette_colors = palette
+
+    def save_to_file(self, filename):
+        data = {
+            "image_grid_size_x": self.image_grid_size_x,
+            "image_grid_size_y": self.image_grid_size_y,
+            "palette_colors": self.palette_colors,
+            "image_grid": self.image_grid,
+        }
+        # print(json.dumps(data))
+        with open(filename, 'w') as f:
+            f.write(json.dumps(data))
+
+    def load_from_file(self, filename):
+        with open(filename, 'r') as f:
+            data = json.load(filename)
+            print(data['image_grid_size_x'])
 
 
 if __name__ == "__main__":
