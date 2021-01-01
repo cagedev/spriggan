@@ -28,8 +28,8 @@ class SprigganApp:
     media_dir = './media'
     base_save_filename = 'spriggan_save_'
     base_export_filename = 'spriggan_export_'
-    base_save_ext = '.json'
-    base_export_ext = '.png'
+    base_save_ext = 'json'
+    base_export_ext = 'png'
     load_files_filter = 'spriggan*.json'
 
     background_color = (34, 0, 102)
@@ -232,12 +232,22 @@ class SprigganApp:
         t = int(datetime.utcnow().timestamp())
         print(t)
         export_file.save_to_file(
-            self.media_dir + '/' + self.base_save_filename + str(t) + self.base_save_ext)
+            self.media_dir + '/' + self.base_save_filename + str(t) + '.' + self.base_save_ext)
         # print('file_save')
         self.set_saved()
 
     def file_load(self):
-        print('file_load')
+        filename = self.filelist_widgets[0].getList()[self.filelist_widgets[0].getSelection()[0]]
+        import_file = SprigganFile()
+        import_file.load_from_file(filename)
+        self.image_grid_size_x = import_file.image_grid_size_x
+        self.image_grid_size_y = import_file.image_grid_size_y
+        self.image_grid = import_file.image_grid
+        self.palette_colors = import_file.palette_colors
+        # print(self.filelist_widgets[0].getList()[self.filelist_widgets[0].getSelection()[0]])
+        # print(self.filelist_widgets[0].getSelection())
+        # print('file_load')
+        self.set_saved()
 
     def file_export(self):
         print('file_export')
@@ -283,8 +293,6 @@ class SprigganApp:
             self.filelist_group.draw(self.window_surface, self.background)
             self.draw_grid()
             pygame.display.update()
-            # pygame.time.wait(100)
-            # pygame.display.update()
 
 
 class SprigganFile():
@@ -301,14 +309,14 @@ class SprigganFile():
             "palette_colors": self.palette_colors,
             "image_grid": self.image_grid,
         }
-        # print(json.dumps(data))
         with open(filename, 'w') as f:
             f.write(json.dumps(data))
 
     def load_from_file(self, filename):
         with open(filename, 'r') as f:
-            data = json.load(filename)
-            print(data['image_grid_size_x'])
+            data = json.load(f)
+            self.__dict__ = data
+        print(f"Data loaded from {filename}")
 
 
 if __name__ == "__main__":
